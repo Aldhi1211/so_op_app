@@ -72,16 +72,43 @@ class _HomeState extends State<Home> {
                             ],
                           ),
                         ),
-                        Padding(
-                          padding: const EdgeInsets.all(5.0),
-                          child: Container(
-                            width: 45,
-                            height: 45,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(45),
+                        GestureDetector(
+                          onTapUp: (details) {
+                            showMenu(
+                              context: context,
+                              position: RelativeRect.fromLTRB(
+                                details.globalPosition.dx, // Posisi X
+                                details.globalPosition.dy +
+                                    10, // Posisi Y (biar sedikit di bawah tombol)
+                                details.globalPosition.dx + 10,
+                                details.globalPosition.dy + 10,
+                              ),
+                              items: [
+                                PopupMenuItem(
+                                  child: ListTile(
+                                    leading: Icon(Icons.logout,
+                                        color: Color(0xFF6D91F3)),
+                                    title: Text("Logout"),
+                                    onTap: () {
+                                      Navigator.pop(context); // Tutup menu
+                                      logout(context); // Panggil fungsi logout
+                                    },
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.all(5.0),
+                            child: Container(
+                              width: 45,
+                              height: 45,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(45),
+                              ),
+                              child: Image.asset('assets/user.png'),
                             ),
-                            child: Image.asset('assets/user.png'),
                           ),
                         ),
                       ],
@@ -123,47 +150,47 @@ class _HomeState extends State<Home> {
               ),
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 20),
-            child: GestureDetector(
-              onTap: () {
-                logout(context);
-              },
-              onTapDown: (_) =>
-                  setState(() => isPressed = true), // Saat ditekan
-              onTapUp: (_) => setState(() => isPressed = false), // Saat dilepas
-              onTapCancel: () =>
-                  setState(() => isPressed = false), // Saat dibatalkan
-              child: AnimatedContainer(
-                duration: Duration(milliseconds: 200),
-                width: MediaQuery.of(context).size.width * 0.5,
-                height: 50,
-                decoration: BoxDecoration(
-                  color: isPressed
-                      ? Colors.blueGrey
-                      : Color(0xFF6D91F3), // Warna berubah saat ditekan
-                  borderRadius: BorderRadius.circular(10),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black
-                          .withOpacity(0.34), // Warna shadow transparan
-                      blurRadius: 5, // Efek blur shadow
-                      spreadRadius: 1, // Seberapa luas shadow menyebar
-                      offset: Offset(0, 2), // Posisi shadow (x, y)
-                    ),
-                  ],
-                ),
-                child: Center(
-                    child: Text(
-                  "Logout",
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 16),
-                )),
-              ),
-            ),
-          )
+          // Padding(
+          //   padding: const EdgeInsets.symmetric(vertical: 20),
+          //   child: GestureDetector(
+          //     onTap: () {
+          //       logout(context);
+          //     },
+          //     onTapDown: (_) =>
+          //         setState(() => isPressed = true), // Saat ditekan
+          //     onTapUp: (_) => setState(() => isPressed = false), // Saat dilepas
+          //     onTapCancel: () =>
+          //         setState(() => isPressed = false), // Saat dibatalkan
+          //     child: AnimatedContainer(
+          //       duration: Duration(milliseconds: 200),
+          //       width: MediaQuery.of(context).size.width * 0.5,
+          //       height: 50,
+          //       decoration: BoxDecoration(
+          //         color: isPressed
+          //             ? Colors.blueGrey
+          //             : Color(0xFF6D91F3), // Warna berubah saat ditekan
+          //         borderRadius: BorderRadius.circular(10),
+          //         boxShadow: [
+          //           BoxShadow(
+          //             color: Colors.black
+          //                 .withOpacity(0.34), // Warna shadow transparan
+          //             blurRadius: 5, // Efek blur shadow
+          //             spreadRadius: 1, // Seberapa luas shadow menyebar
+          //             offset: Offset(0, 2), // Posisi shadow (x, y)
+          //           ),
+          //         ],
+          //       ),
+          //       child: Center(
+          //           child: Text(
+          //         "Logout",
+          //         style: TextStyle(
+          //             color: Colors.white,
+          //             fontWeight: FontWeight.w600,
+          //             fontSize: 16),
+          //       )),
+          //     ),
+          //   ),
+          // )
         ],
       ),
     );

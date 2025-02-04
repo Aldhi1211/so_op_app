@@ -4,6 +4,7 @@ import 'package:stock_opname/views/Home.dart';
 import 'package:stock_opname/widget/textfield.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class StockIn extends StatefulWidget {
   const StockIn({super.key});
@@ -78,9 +79,9 @@ class _StockInState extends State<StockIn> {
 
   // Fungsi untuk menambah stok
   Future<void> addStock(String idBarang, int quantity, String satuan) async {
-    String url = "${Config.baseUrl}/stock"; // Ganti dengan URL API-mu
+    String url = "${Config.baseUrl}/stock"; // URL API pertama
 
-    // Data yang akan dikirimkan ke API
+    // Data yang akan dikirimkan ke API pertama
     Map<String, dynamic> data = {
       'id_barang': idBarang,
       'quantity': quantity,
@@ -97,32 +98,28 @@ class _StockInState extends State<StockIn> {
       );
 
       if (response.statusCode == 200) {
-        // Jika request berhasil
+        // Jika request pertama berhasil
         var responseData = jsonDecode(response.body);
         print("Stok berhasil ditambahkan: $responseData");
-        // Lakukan sesuatu setelah sukses, misalnya reset field atau beri notifikasi
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: Text("Success"),
-            content: Text("Stock telah ditambahkan"),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pushReplacement(
-                    context, MaterialPageRoute(builder: (context) => Home())),
-                child: Text("OK"),
-              )
-            ],
-          ),
-        );
+
+        // Ambil email pengguna yang sedang login
+        String? submittedBy =
+            await getUserEmail(); // Mendapatkan email pengguna
+        if (submittedBy == null) {
+          print("Email pengguna tidak ditemukan.");
+          return;
+        }
+
+        // Lakukan request kedua ke API /stockin
+        await addStockIn(idBarang, quantity, satuan, submittedBy);
       } else {
-        // Jika response gagal
+        // Jika request pertama gagal
         print("Gagal menambah stok");
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
             title: Text("Gagal"),
-            content: Text("Stock telah ditambahkan"),
+            content: Text("Stok gagal ditambahkan"),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pushReplacement(
@@ -136,6 +133,77 @@ class _StockInState extends State<StockIn> {
     } catch (e) {
       print("Error saat menambah stok: $e");
     }
+  }
+
+// Fungsi untuk memanggil API /stockin
+  Future<void> addStockIn(
+      String idBarang, int quantity, String satuan, String submittedBy) async {
+    String url = "${Config.baseUrl}/stockin"; // URL API kedua (stockin)
+
+    // Data yang akan dikirimkan ke API kedua
+    Map<String, dynamic> data = {
+      "id_barang": idBarang,
+      "tanggal_beli": DateTime.now()
+          .toIso8601String()
+          .split('T')[0], // Format tanggal: yyyy-mm-dd
+      "quantity": quantity.toString(),
+      "satuan": satuan,
+      "submitted_by":
+          submittedBy, // Menggunakan email yang didapat dari getUserEmail
+    };
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode(data), // Mengirim data dalam format JSON
+      );
+
+      if (response.statusCode == 201) {
+        // Jika request kedua berhasil
+        print("StockIn berhasil ditambahkan.");
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text("Success"),
+            content: Text("Stock berhasil ditambahkan"),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pushReplacement(
+                    context, MaterialPageRoute(builder: (context) => Home())),
+                child: Text("OK"),
+              )
+            ],
+          ),
+        );
+      } else {
+        // Jika request kedua gagal
+        print("Gagal menambah StockIn");
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text("Gagal"),
+            content: Text("StockIn gagal ditambahkan"),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pushReplacement(
+                    context, MaterialPageRoute(builder: (context) => Home())),
+                child: Text("OK"),
+              )
+            ],
+          ),
+        );
+      }
+    } catch (e) {
+      print("Error saat menambah StockIn: $e");
+    }
+  }
+
+  Future<String?> getUserEmail() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('userEmail'); // Mengambil email yang disimpan
   }
 
   @override

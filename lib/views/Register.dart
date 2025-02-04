@@ -24,15 +24,22 @@ class _RegisterState extends State<Register> {
   Future<bool> checkEmailExists(String email) async {
     String url =
         "${Config.baseUrl}/search?check_email=$email"; // Ganti dengan API-mu
-
     try {
       final response = await http.get(Uri.parse(url));
 
       if (response.statusCode == 200) {
-        print("Email Exist !!!");
+        var data = jsonDecode(response.body);
+
+        // Jika data NULL atau kosong, anggap email tidak ada
+        if (data == null || data.isEmpty || data["response"] == null) {
+          print("Email tidak ditemukan!");
+          return false;
+        }
+
+        print("Email ditemukan!");
         return true;
       } else {
-        print("Email not Exist !!!");
+        print("Error: ${response.statusCode}");
         return false;
       }
     } catch (e) {
@@ -47,12 +54,68 @@ class _RegisterState extends State<Register> {
       isLoading = true;
     });
 
-// 🔍 Cek apakah email sudah ada di database
-    bool emailExists = await checkEmailExists(emailController.text);
-    print("Emailnya ada ni : ${emailExists}");
-    if (emailExists) {
-      print("Email Exist !!!");
+    // 🔍 Validasi Field Kosong
+    if (emailController.text.isEmpty ||
+        passwordController.text.isEmpty ||
+        nameController.text.isEmpty) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text("Error"),
+          content: Text("Harap isi semua kolom sebelum mendaftar."),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text("OK"),
+            ),
+          ],
+        ),
+      );
       setState(() => isLoading = false);
+      return;
+    }
+
+    // 🔍 Validasi Format Email
+    if (!isValidEmail(emailController.text)) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text("Format Email Salah"),
+          content: Text("Silakan masukkan email yang valid."),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text("OK"),
+            ),
+          ],
+        ),
+      );
+      setState(() => isLoading = false);
+      return;
+    }
+
+    // 🔍 Validasi Panjang Password (Minimal 6 Karakter)
+    if (passwordController.text.length < 6) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text("Password Terlalu Pendek"),
+          content: Text("Password harus memiliki minimal 6 karakter."),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text("OK"),
+            ),
+          ],
+        ),
+      );
+      setState(() => isLoading = false);
+      return;
+    }
+
+    // 🔍 Cek apakah email sudah ada di database
+    bool emailExists = await checkEmailExists(emailController.text);
+    if (emailExists) {
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
@@ -66,10 +129,11 @@ class _RegisterState extends State<Register> {
           ],
         ),
       );
-      return; // Hentikan proses registrasi
+      setState(() => isLoading = false);
+      return;
     }
 
-    String url = "${Config.baseUrl}/users"; // Ganti dengan URL API-mu
+    String url = "${Config.baseUrl}/users";
     Map<String, String> headers = {"Content-Type": "application/json"};
     Map<String, String> body = {
       "name": nameController.text,
@@ -94,9 +158,20 @@ class _RegisterState extends State<Register> {
           );
         });
       } else {
-        print("Email: ${emailController.text}");
-        print("Password: ${passwordController.text}");
-        print("Login Gagal: ${response.body}");
+        var data = jsonDecode(response.body);
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text("Gagal"),
+            content: Text(data['msg']),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text("OK"),
+              )
+            ],
+          ),
+        );
       }
     } catch (e) {
       print("Error: $e");

@@ -6,6 +6,7 @@ import 'package:stock_opname/widget/textfield.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:jwt_decoder/jwt_decoder.dart'; // Import package
 
 class Login extends StatefulWidget {
   const Login({super.key});
@@ -43,17 +44,60 @@ class _LoginState extends State<Login> {
       if (response.statusCode == 200) {
         var data = jsonDecode(response.body);
         print("Login Berhasil: ${data["accessToken"]}");
-        saveToken(data["accessToken"]);
-        Future.microtask(() {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => Home()),
+        String accessToken = data["accessToken"]; // Ambil token
+
+        // Decode token untuk mendapatkan role
+        Map<String, dynamic> decodedToken = JwtDecoder.decode(accessToken);
+        String role = decodedToken["role"] ?? ""; // Ambil role
+        String email = decodedToken["email"] ?? ""; // Ambil role
+
+        print("Role dari token: $role");
+
+        if (role == "Petugas" || role == "Admin") {
+          print("Login Berhasil sebagai Petugas");
+          await saveToken(accessToken); // Simpan token
+          await saveUserEmail(email); // Simpan token
+          Future.microtask(() {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => Home()),
+            );
+          });
+        } else {
+          // Jika bukan petugas, tampilkan pesan error
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: Text("Akses Ditolak"),
+              content: Text(
+                  "Hanya petugas yang bisa login! \n\nSilahkan hubungi admin untuk memberikan role"),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text("OK"),
+                )
+              ],
+            ),
           );
-        });
+        }
       } else {
+        var data = jsonDecode(response.body);
         print("Email: ${emailController.text}");
         print("Password: ${passwordController.text}");
         print("Login Gagal: ${response.body}");
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text("Gagal"),
+            content: Text(data['msg']),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text("OK"),
+              )
+            ],
+          ),
+        );
       }
     } catch (e) {
       print("Error: $e");
@@ -67,6 +111,11 @@ class _LoginState extends State<Login> {
   Future<void> saveToken(String token) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setString("accessToken", token);
+  }
+
+  Future<void> saveUserEmail(String email) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('userEmail', email);
   }
 
   String errorMessage = "";

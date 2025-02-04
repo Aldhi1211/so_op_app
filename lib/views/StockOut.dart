@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:stock_opname/config.dart';
 import 'package:stock_opname/views/Home.dart';
 import 'package:stock_opname/widget/textfield.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class StockOut extends StatefulWidget {
   const StockOut({super.key});
@@ -90,11 +91,17 @@ class _StockOutState extends State<StockOut> {
     return false; // Default: anggap email belum ada jika terjadi error
   }
 
+  Future<String?> getUserEmail() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('userEmail'); // Mengambil email yang disimpan
+  }
+
   // Fungsi untuk menambah stok
   Future<void> issuedStock(String idBarang, int quantity, String satuan) async {
-    String url = "${Config.baseUrl}/issuedstock"; // Ganti dengan URL API-mu
+    String url =
+        "${Config.baseUrl}/issuedstock"; // URL API pertama (issuedstock)
 
-    // Data yang akan dikirimkan ke API
+    // Data yang akan dikirimkan ke API pertama
     Map<String, dynamic> data = {
       'id_barang': idBarang,
       'quantity': quantity,
@@ -111,57 +118,32 @@ class _StockOutState extends State<StockOut> {
       );
 
       if (response.statusCode == 200) {
-        // Jika request berhasil
+        // Jika request pertama berhasil
         var responseData = jsonDecode(response.body);
         print("Stok berhasil dikeluarkan: $responseData");
-        // Lakukan sesuatu setelah sukses, misalnya reset field atau beri notifikasi
-        Navigator.pushReplacement(
-            context, MaterialPageRoute(builder: (context) => Home()));
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: Text("Success"),
-            content: Text("Stock berhasil dikeluarkan"),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text("OK"),
-              )
-            ],
-          ),
-        );
-      }
-      if (response.statusCode == 400 || response.statusCode == 404) {
-        // Jika response gagal
-        var errorData = jsonDecode(response.body);
-        print(errorData);
 
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: Text("Gagal"),
-            content: Text("${errorData['message']}"),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text("OK"),
-              )
-            ],
-          ),
-        );
+        // Ambil email pengguna yang sedang login
+        String? submittedBy =
+            await getUserEmail(); // Mendapatkan email pengguna
+        if (submittedBy == null) {
+          print("Email pengguna tidak ditemukan.");
+          return;
+        }
+
+        // Kirim data ke API kedua /stockout
+        await issuedStockOut(idBarang, quantity, satuan, submittedBy);
       } else {
-        var errorData = jsonDecode(response.body);
-        print(errorData);
-        print(url);
+        // Jika request pertama gagal
+        print("Gagal mengeluarkan stok");
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
             title: Text("Gagal"),
-            content: Text(
-                "Terjadi kesalahan saat memproses data. Silahkan Hubungi IT anda"),
+            content: Text("Stok gagal dikeluarkan"),
             actions: [
               TextButton(
-                onPressed: () => Navigator.pop(context),
+                onPressed: () => Navigator.pushReplacement(
+                    context, MaterialPageRoute(builder: (context) => Home())),
                 child: Text("OK"),
               )
             ],
@@ -169,7 +151,7 @@ class _StockOutState extends State<StockOut> {
         );
       }
     } catch (e) {
-      print("Error saat mengurangi stok: $e");
+      print("Error saat mengeluarkan stok: $e");
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
@@ -180,7 +162,87 @@ class _StockOutState extends State<StockOut> {
             TextButton(
               onPressed: () => Navigator.pop(context),
               child: Text("OK"),
-            )
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
+// Fungsi untuk memanggil API /stockout
+  Future<void> issuedStockOut(
+      String idBarang, int quantity, String satuan, String submittedBy) async {
+    String url = "${Config.baseUrl}/stockout"; // URL API kedua (stockout)
+
+    // Data yang akan dikirimkan ke API kedua
+    Map<String, dynamic> data = {
+      "id_barang": idBarang,
+      "tanggal_keluar": DateTime.now()
+          .toIso8601String()
+          .split('T')[0], // Format tanggal: yyyy-mm-dd
+      "quantity": quantity.toString(),
+      "satuan": satuan,
+      "submitted_by":
+          submittedBy, // Menggunakan email yang didapat dari getUserEmail
+    };
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode(data), // Mengirim data dalam format JSON
+      );
+
+      if (response.statusCode == 201) {
+        // Jika request kedua berhasil
+        print("StockOut berhasil dikurangi.");
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text("Success"),
+            content:
+                Text("Stock berhasil dikeluarkan dan tercatat di StockOut."),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text("OK"),
+              ),
+            ],
+          ),
+        );
+      } else {
+        // Jika request kedua gagal
+        var errorData = jsonDecode(response.body);
+        print(errorData);
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text("Gagal"),
+            content: Text("StockOut gagal diproses: ${errorData['message']}"),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text("OK"),
+              ),
+            ],
+          ),
+        );
+      }
+    } catch (e) {
+      print("Error saat mengurangi StockOut: $e");
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text("Gagal"),
+          content:
+              Text("Terjadi kesalahan saat memproses respons dari server."),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text("OK"),
+            ),
           ],
         ),
       );
@@ -342,6 +404,8 @@ class _StockOutState extends State<StockOut> {
                     } else {
                       issuedStock(selectedValue!, int.parse(stockOut.text),
                           selectedValueSatuan!);
+                      Navigator.pushReplacement(context,
+                          MaterialPageRoute(builder: (context) => Home()));
                     }
                     // print(
                     //     "${selectedValue}, ${selectedValueSatuan}, ${stockOut.text}, ${stockNow.text}");
