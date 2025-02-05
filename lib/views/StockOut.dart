@@ -117,7 +117,7 @@ class _StockOutState extends State<StockOut> {
         body: jsonEncode(data), // Mengirim data dalam format JSON
       );
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == 200 || response.statusCode == 201) {
         // Jika request pertama berhasil
         var responseData = jsonDecode(response.body);
         print("Stok berhasil dikeluarkan: $responseData");
