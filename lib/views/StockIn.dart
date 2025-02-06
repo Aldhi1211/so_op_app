@@ -122,13 +122,18 @@ class _StockInState extends State<StockIn> {
             content: Text("Stok gagal ditambahkan"),
             actions: [
               TextButton(
-                onPressed: () => Navigator.pushReplacement(
-                    context, MaterialPageRoute(builder: (context) => Home())),
+                onPressed: () => Navigator.pop(context),
                 child: Text("OK"),
               )
             ],
           ),
-        );
+        ).then((_) {
+          // Navigasi setelah dialog tertutup
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => Home()),
+          );
+        });
       }
     } catch (e) {
       print("Error saat menambah stok: $e");
@@ -171,13 +176,18 @@ class _StockInState extends State<StockIn> {
             content: Text("Stock berhasil ditambahkan"),
             actions: [
               TextButton(
-                onPressed: () => Navigator.pushReplacement(
-                    context, MaterialPageRoute(builder: (context) => Home())),
+                onPressed: () => Navigator.pop(context),
                 child: Text("OK"),
               )
             ],
           ),
-        );
+        ).then((_) {
+          // Navigasi setelah dialog tertutup
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => Home()),
+          );
+        });
       } else {
         // Jika request kedua gagal
         print("Gagal menambah StockIn");
@@ -188,13 +198,18 @@ class _StockInState extends State<StockIn> {
             content: Text("StockIn gagal ditambahkan"),
             actions: [
               TextButton(
-                onPressed: () => Navigator.pushReplacement(
-                    context, MaterialPageRoute(builder: (context) => Home())),
+                onPressed: () => Navigator.pop(context),
                 child: Text("OK"),
               )
             ],
           ),
-        );
+        ).then((_) {
+          // Navigasi setelah dialog tertutup
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => Home()),
+          );
+        });
       }
     } catch (e) {
       print("Error saat menambah StockIn: $e");
@@ -340,8 +355,6 @@ class _StockInState extends State<StockIn> {
                       stockIn.text != "") {
                     addStock(selectedValue!, int.parse(stockIn.text),
                         selectedValueSatuan!);
-                    Navigator.pushReplacement(context,
-                        MaterialPageRoute(builder: (context) => Home()));
                   } else {
                     showDialog(
                       context: context,

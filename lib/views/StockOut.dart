@@ -148,7 +148,13 @@ class _StockOutState extends State<StockOut> {
               )
             ],
           ),
-        );
+        ).then((_) {
+          // Navigasi setelah dialog tertutup
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => Home()),
+          );
+        });
       }
     } catch (e) {
       print("Error saat mengeluarkan stok: $e");
@@ -165,7 +171,13 @@ class _StockOutState extends State<StockOut> {
             ),
           ],
         ),
-      );
+      ).then((_) {
+        // Navigasi setelah dialog tertutup
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => Home()),
+        );
+      });
     }
   }
 
@@ -211,7 +223,13 @@ class _StockOutState extends State<StockOut> {
               ),
             ],
           ),
-        );
+        ).then((_) {
+          // Navigasi setelah dialog tertutup
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => Home()),
+          );
+        });
       } else {
         // Jika request kedua gagal
         var errorData = jsonDecode(response.body);
@@ -228,7 +246,13 @@ class _StockOutState extends State<StockOut> {
               ),
             ],
           ),
-        );
+        ).then((_) {
+          // Navigasi setelah dialog tertutup
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => Home()),
+          );
+        });
       }
     } catch (e) {
       print("Error saat mengurangi StockOut: $e");
@@ -245,7 +269,13 @@ class _StockOutState extends State<StockOut> {
             ),
           ],
         ),
-      );
+      ).then((_) {
+        // Navigasi setelah dialog tertutup
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => Home()),
+        );
+      });
     }
   }
 
@@ -404,8 +434,6 @@ class _StockOutState extends State<StockOut> {
                     } else {
                       issuedStock(selectedValue!, int.parse(stockOut.text),
                           selectedValueSatuan!);
-                      Navigator.pushReplacement(context,
-                          MaterialPageRoute(builder: (context) => Home()));
                     }
                     // print(
                     //     "${selectedValue}, ${selectedValueSatuan}, ${stockOut.text}, ${stockNow.text}");
